@@ -1,0 +1,78 @@
+# -----------------------------
+
+# Python cache files
+
+# -----------------------------
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.pyc.*
+
+# -----------------------------
+
+# Virtual environment (IMPORTANT)
+
+# -----------------------------
+
+venv/
+.env/
+.venv/
+env/
+ENV/
+
+# -----------------------------
+
+# Jupyter Notebook
+
+# -----------------------------
+
+.ipynb_checkpoints/
+
+# -----------------------------
+
+# OS generated files
+
+# -----------------------------
+
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+
+# IDE / Editor files
+
+# -----------------------------
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# -----------------------------
+
+# Logs
+
+# -----------------------------
+
+*.log
+
+# -----------------------------
+
+# CSV / Generated reports (optional)
+
+# Remove this block if you want to upload reports to Git
+
+# -----------------------------
+
+*_seo_reports/
+*.csv
+
+# -----------------------------
+
+# Matplotlib / cache
+
+# -----------------------------
+
+.matplotlib/
