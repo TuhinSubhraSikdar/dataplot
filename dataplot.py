@@ -3,136 +3,138 @@ import matplotlib.pyplot as plt
 import os
 
 # =====================================
-# 1. SET DOMAIN NAME (change this once)
+# 1. DOMAIN NAME
 # =====================================
-domain_name = "stayconnectedplumbing"
+domain_name = "seo_project"
 
-# Folder name
-folder_name = f"{domain_name}_seo_reports"
+folder_name = f"{domain_name}_visual_reports"
 
-# Create folder automatically
 if not os.path.exists(folder_name):
     os.makedirs(folder_name)
 
 # =====================================
-# 2. LOAD CSV FILE
+# 2. LOAD CSV
 # =====================================
-file_path = "keywords.csv"   # your uploaded CSV
+file_path = "keywords.csv"
 df = pd.read_csv(file_path)
 
 # =====================================
-# 3. DETECT DATE COLUMNS AUTOMATICALLY
+# 3. AUTO DETECT DATE COLUMNS
 # =====================================
-ranking_columns = [col for col in df.columns if "." in col or "-" in col]
-ranking_columns = sorted(ranking_columns, reverse=True)
+date_columns = []
 
-latest = ranking_columns[0]
-previous = ranking_columns[1]
+for col in df.columns:
+    if any(char.isdigit() for char in col):
+        date_columns.append(col)
 
-# Convert ranking columns to numbers
-for col in ranking_columns:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+date_columns = sorted(date_columns, reverse=True)
 
-# =====================================
-# 4. EXTRACT SUBURB FROM KEYWORD
-# =====================================
-df["Suburb"] = df["New Keywords"].apply(lambda x: str(x).split()[-1].capitalize())
+latest = date_columns[0]
+previous = date_columns[1]
 
 # =====================================
-# 5. KEYWORD GROWTH TREND CHART
+# 4. CLEAN RANK DATA
 # =====================================
-avg_rank_by_date = []
+def clean_rank(value):
+    if pd.isna(value):
+        return 101
+    
+    value = str(value).strip().lower()
 
-for col in ranking_columns:
-    avg_rank = df[col].mean()
-    avg_rank_by_date.append(avg_rank)
+    if value in ["not in 100", "-", "", "na", "n/a"]:
+        return 101
+
+    try:
+        return int(value)
+    except:
+        return 101
+
+for col in date_columns:
+    df[col] = df[col].apply(clean_rank)
+
+# =====================================
+# 5. OVERALL SEO GROWTH TREND
+# =====================================
+avg_rank = []
+
+for col in date_columns:
+    avg_rank.append(df[col].mean())
 
 plt.figure()
-plt.plot(ranking_columns, avg_rank_by_date)
-plt.title("Keyword Ranking Growth Trend")
+plt.plot(date_columns, avg_rank)
+plt.title("SEO Keyword Growth Trend")
 plt.xlabel("Date")
 plt.ylabel("Average Ranking Position")
 plt.xticks(rotation=45)
 
-# SAVE IMAGE
-trend_path = f"{folder_name}/{domain_name}_keyword-trend.png"
-plt.savefig(trend_path, bbox_inches="tight")
+plt.savefig(f"{folder_name}/seo_growth_trend.png", bbox_inches="tight")
 plt.close()
 
 # =====================================
-# 6. SUBURB PERFORMANCE SCORE
+# 6. TOP WINNING KEYWORDS (Top 20)
 # =====================================
-def score(row):
-    if row <= 3:
-        return 100
-    elif row <= 10:
-        return 70
-    elif row <= 20:
-        return 40
-    elif row <= 50:
-        return 20
-    else:
-        return 5
+top_keywords = df.sort_values(by=latest).head(20)
 
-df["SEO Score"] = df[latest].apply(score)
-
-suburb_score = df.groupby("Suburb")["SEO Score"].mean().sort_values(ascending=False)
-
-# BAR CHART
 plt.figure()
-suburb_score.head(15).plot(kind="bar")
-plt.title("Suburb SEO Strength Score")
-plt.xlabel("Suburb")
-plt.ylabel("SEO Score")
-plt.xticks(rotation=40)
+plt.barh(top_keywords["Keywords"], top_keywords[latest])
+plt.title("Top Performing Keywords")
+plt.xlabel("Ranking Position")
+plt.ylabel("Keywords")
 
-# SAVE IMAGE
-suburb_path = f"{folder_name}/{domain_name}_suburb-score.png"
-plt.savefig(suburb_path, bbox_inches="tight")
+plt.savefig(f"{folder_name}/top_keywords.png", bbox_inches="tight")
 plt.close()
 
 # =====================================
-# 7. RANKING DISTRIBUTION PIE CHART
+# 7. EASY WIN KEYWORDS (Rank 5–20)
+# =====================================
+easy_win = df[(df[latest] > 5) & (df[latest] <= 20)]
+easy_win = easy_win.sort_values(by=latest).head(20)
+
+plt.figure()
+plt.barh(easy_win["Keywords"], easy_win[latest])
+plt.title("Easy SEO Win Keywords (Optimize These First)")
+plt.xlabel("Ranking Position")
+plt.ylabel("Keywords")
+
+plt.savefig(f"{folder_name}/easy_win_keywords.png", bbox_inches="tight")
+plt.close()
+
+# =====================================
+# 8. KEYWORDS LOSING RANK
+# =====================================
+df["Drop"] = df[latest] - df[previous]
+
+losing_keywords = df.sort_values(by="Drop", ascending=False).head(20)
+
+plt.figure()
+plt.barh(losing_keywords["Keywords"], losing_keywords["Drop"])
+plt.title("Keywords Losing Ranking (Needs Fix)")
+plt.xlabel("Ranking Drop")
+plt.ylabel("Keywords")
+
+plt.savefig(f"{folder_name}/losing_keywords.png", bbox_inches="tight")
+plt.close()
+
+# =====================================
+# 9. SEO STRENGTH DISTRIBUTION
 # =====================================
 top3 = df[df[latest] <= 3].shape[0]
 top10 = df[(df[latest] > 3) & (df[latest] <= 10)].shape[0]
 top20 = df[(df[latest] > 10) & (df[latest] <= 20)].shape[0]
 others = df[df[latest] > 20].shape[0]
 
-labels = ["Top 3", "Top 10", "Top 20", "Not Ranking Well"]
+labels = ["Top 3", "Top 10", "Top 20", "Not Ranking"]
 sizes = [top3, top10, top20, others]
 
 plt.figure()
 plt.pie(sizes, labels=labels, autopct="%1.1f%%")
-plt.title("Keyword Ranking Distribution")
+plt.title("SEO Keyword Strength Distribution")
 
-# SAVE IMAGE
-pie_path = f"{folder_name}/{domain_name}_ranking-pie.png"
-plt.savefig(pie_path, bbox_inches="tight")
+plt.savefig(f"{folder_name}/seo_strength_distribution.png", bbox_inches="tight")
 plt.close()
 
 # =====================================
-# 8. PRIORITY KEYWORDS REPORT
+# DONE
 # =====================================
-priority_keywords = df[
-    (df[latest] > 5) & 
-    (df[latest] <= 20)
-].sort_values(by=latest)
-
-priority_path = f"{folder_name}/{domain_name}_priority_keywords.csv"
-priority_keywords.to_csv(priority_path, index=False)
-
-# =====================================
-# 9. BEST IMPROVED KEYWORDS
-# =====================================
-df["Improvement"] = df[previous] - df[latest]
-best_growth = df.sort_values(by="Improvement", ascending=False)
-
-growth_path = f"{folder_name}/{domain_name}_best_growth_keywords.csv"
-best_growth.to_csv(growth_path, index=False)
-
-# =====================================
-# DONE MESSAGE
-# =====================================
-print("\nAll reports saved successfully in folder:")
-print(folder_name)
+print("\nAll SEO Visual Reports Generated Successfully!")
+print("Check folder:", folder_name)
